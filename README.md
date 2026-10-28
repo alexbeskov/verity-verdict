@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Verity — AI Due Diligence
 
-## Getting Started
+Verity — ИИ-инструмент для автоматизированной проверки контрагентов и целей инвестиций (due diligence). Система анализирует пакет документов компании и возвращает риск-балл, красные флаги с цитатами из источников, противоречия между документами, вопросы для встречи с собственником и резюме для инвестиционного комитета.
 
-First, run the development server:
+> **Это MVP-демо на синтетических данных вымышленной компании.** Результаты формируются ИИ и требуют проверки аналитиком.
+
+## Запуск локально
 
 ```bash
+# 1. Установить зависимости
+npm install
+
+# 2. Создать файл окружения
+cp .env.example .env.local
+
+# 3. Вписать ключ OpenRouter в .env.local
+# Получить ключ: https://openrouter.ai/keys
+
+# 4. Запустить
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Откройте http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Деплой на Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Залейте репозиторий на GitHub
+2. В Vercel: Import Project → выберите репозиторий
+3. В Settings → Environment Variables добавьте: `OPENROUTER_API_KEY` = ваш ключ
+4. Deploy
 
-## Learn More
+Платных доменов подключать не нужно — работает на `*.vercel.app`.
 
-To learn more about Next.js, take a look at the following resources:
+## Режим «Записанный прогон»
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+На случай, если бесплатная модель недоступна во время демонстрации, предусмотрен режим записанного прогона. Включите чекбокс «Записанный прогон» на экране загрузки — система покажет заранее сохранённый результат анализа с имитацией живого лога шагов. API-ключ для этого режима не требуется.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Стек
 
-## Deploy on Vercel
+- Next.js (App Router) + TypeScript + Tailwind CSS
+- OpenRouter (бесплатные модели с суффиксом `:free`)
+- Хостинг: Vercel Hobby (бесплатный план)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Безопасность
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Ключ OpenRouter хранится только в серверной переменной окружения
+- На клиент ключ не попадает ни при каких условиях
+- Содержимое документов не логируется
+
+## Ограничения MVP
+
+- Только текстовый ввод (нет загрузки PDF/DOCX)
+- Нет авторизации и истории проверок
+- Бесплатные модели нестабильны и имеют суточные лимиты (50 запросов/день без покупки кредитов)
+- Данные на бесплатных моделях могут логироваться провайдером
+
+> **Для реальных клиентов необходимо:** развёртывание в контуре клиента (on-premise), платные модели с гарантией неиспользования данных для обучения, интеграция с реальными источниками данных.
+
+## Идеи для доработки
+
+1. **Реальные источники данных**: ЕГРЮЛ, арбитражные суды, ФНС, реестры залогов
+2. **Загрузка PDF/DOCX**: парсинг документов с сохранением структуры
+3. **История проверок**: база данных, сравнение результатов во времени
+4. **Роли и команды**: аналитик, руководитель, комитет — с разными уровнями доступа
+5. **On-premise развёртывание**: Docker-образ с поддержкой локальных LLM через Ollama или vLLM
