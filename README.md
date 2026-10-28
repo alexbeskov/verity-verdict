@@ -27,9 +27,9 @@ npm run dev
 Проект использует [Polza.ai](https://polza.ai) — OpenAI-совместимый API-прокси.
 
 **Модели (цепочка с фоллбэком):**
-1. `deepseek/deepseek-v4-flash` — основная (~5.7₽/1M prompt, ~11.4₽/1M completion)
-2. `deepseek/deepseek-v4.1-flash` — резервная
-3. `google/gemma-4-26b-a4b-it` — запасная
+1. `google/gemma-4-26b-a4b-it` — основная
+2. `deepseek/deepseek-v4-flash` — резервная
+3. `deepseek/deepseek-v4.1-flash` — запасная
 
 Один анализ расходует ~2K prompt + ~2K completion токенов ≈ **0.03–0.05₽ за прогон**.
 

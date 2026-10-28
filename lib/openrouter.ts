@@ -1,9 +1,9 @@
 const POLZA_BASE = 'https://polza.ai/api/v1';
 
 const MODEL_CHAIN = [
+  { id: 'google/gemma-4-26b-a4b-it', name: 'Gemma 4 26B' },
   { id: 'deepseek/deepseek-v4-flash', name: 'DeepSeek V4 Flash' },
   { id: 'deepseek/deepseek-v4.1-flash', name: 'DeepSeek V4.1 Flash' },
-  { id: 'google/gemma-4-26b-a4b-it', name: 'Gemma 4 26B' },
 ];
 
 export async function callPolza(
