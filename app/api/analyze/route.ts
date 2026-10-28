@@ -1,5 +1,5 @@
 import { getDemoDocuments } from '@/lib/demo-data';
-import { getFreeModels, callWithFallback } from '@/lib/openrouter';
+import { callWithFallback } from '@/lib/openrouter';
 import { SYSTEM_PROMPT, buildUserPrompt } from '@/lib/prompts';
 import { parseAnalysisJSON } from '@/lib/json-parser';
 import { verifyFlags } from '@/lib/quote-verifier';
@@ -89,9 +89,9 @@ export async function POST(request: Request) {
           return;
         }
 
-        const apiKey = process.env.OPENROUTER_API_KEY;
+        const apiKey = process.env.POLZA_API_KEY;
         if (!apiKey) {
-          send('error', 'OPENROUTER_API_KEY не настроен');
+          send('error', 'POLZA_API_KEY не настроен. Создайте файл .env.local с ключом от polza.ai');
           controller.close();
           return;
         }
@@ -105,23 +105,12 @@ export async function POST(request: Request) {
           documents = getDemoDocuments();
         }
 
-        step('Получаю список доступных ИИ-моделей...');
-        const models = await getFreeModels(apiKey);
-
-        if (models.length === 0) {
-          send('error', 'Не найдено доступных бесплатных моделей');
-          controller.close();
-          return;
-        }
-
-        step(`Найдено ${models.length} моделей. Начинаю анализ...`);
-
         const userPrompt = buildUserPrompt(documents);
 
         step('Анализирую сведения о компании и структуру собственности...');
 
         const { content: rawContent } = await callWithFallback(
-          apiKey, models, SYSTEM_PROMPT, userPrompt, step
+          apiKey, SYSTEM_PROMPT, userPrompt, step
         );
 
         step('Разбираю результат анализа...');
@@ -134,7 +123,7 @@ export async function POST(request: Request) {
           const retryPrompt = `Твой предыдущий ответ не является валидным JSON. Верни результат анализа СТРОГО в формате JSON без markdown-обёрток. Вот твой предыдущий ответ для исправления:\n\n${rawContent.slice(0, 2000)}`;
 
           const { content: retryContent } = await callWithFallback(
-            apiKey, models, SYSTEM_PROMPT, retryPrompt, step
+            apiKey, SYSTEM_PROMPT, retryPrompt, step
           );
           parsed = parseAnalysisJSON(retryContent) as Record<string, unknown>;
         }
