@@ -1,13 +1,16 @@
 'use client';
 
+import Beams from './Beams';
+
 interface Props {
   steps: string[];
 }
 
 export default function AnalyzingScreen({ steps }: Props) {
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="flex items-center gap-4 mb-8">
+    <div className="max-w-xl mx-auto relative overflow-hidden">
+      <Beams className="opacity-40" />
+      <div className="relative z-10 flex items-center gap-4 mb-8">
         <div className="relative w-10 h-10">
           <div className="absolute inset-0 rounded-full border-2 border-zinc-800" />
           <div className="absolute inset-0 rounded-full border-2 border-t-[var(--accent)] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
@@ -19,7 +22,7 @@ export default function AnalyzingScreen({ steps }: Props) {
         </div>
       </div>
 
-      <div className="space-y-1 glow-card bg-zinc-900/60 rounded-2xl p-5 border border-zinc-800/50">
+      <div className="relative z-10 space-y-1 glow-card bg-zinc-900/60 rounded-2xl p-5 border border-zinc-800/50">
         {steps.map((step, i) => (
           <div key={i} className="flex items-start gap-3 py-2 animate-fade-in-up" style={{ animationDelay: `${i * 80}ms` }}>
             <div className="mt-0.5 shrink-0">
