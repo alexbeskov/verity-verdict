@@ -14,11 +14,11 @@ const AXES = [
   { key: 'ownership' as const, label: 'Собственность' },
 ];
 
-const SIZE = 220;
+const SIZE = 260;
 const CX = SIZE / 2;
 const CY = SIZE / 2;
-const MAX_R = 80;
-const LABEL_OFFSET = 16;
+const MAX_R = 90;
+const LABEL_OFFSET = 24;
 
 function axisPoint(index: number, n: number, r: number) {
   const angle = (2 * Math.PI * index) / n - Math.PI / 2;
@@ -76,7 +76,7 @@ export default function RadarChart({ subscores }: Props) {
   const dataPolygon = dataPoints.map(p => `${p.x},${p.y}`).join(' ');
 
   return (
-    <div className="w-full max-w-[200px] px-3">
+    <div className="w-full max-w-[260px] px-2">
     <svg
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       className="w-full"
@@ -154,16 +154,16 @@ export default function RadarChart({ subscores }: Props) {
               x={p.x}
               y={p.y + dy}
               textAnchor={textAnchor}
-              fontSize={9}
+              fontSize={11}
               fill="#a1a1aa"
             >
               {label}
             </text>
             <text
               x={p.x}
-              y={p.y + dy + 11}
+              y={p.y + dy + 14}
               textAnchor={textAnchor}
-              fontSize={10}
+              fontSize={13}
               fontWeight="600"
               fill={riskColor(score)}
             >

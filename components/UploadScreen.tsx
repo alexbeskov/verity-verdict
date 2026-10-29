@@ -9,23 +9,17 @@ interface Props {
   onStart: (useCached: boolean, customText?: string) => void;
 }
 
-const DEMO_FILES = [
-  { name: 'company-info.txt', label: 'Сведения о компании' },
-  { name: 'charter.txt', label: 'Устав (фрагмент)' },
-  { name: 'supply-contract.txt', label: 'Договор поставки' },
-  { name: 'financials.txt', label: 'Финансовая отчётность' },
-  { name: 'customers.txt', label: 'Список покупателей' },
-];
+type Mode = 'upload' | 'registry';
 
 const HOW_IT_WORKS = [
   {
     step: '01',
-    title: 'Загрузите документы',
-    desc: 'Устав, договоры, финансовую отчётность — любые документы контрагента.',
+    title: 'Выберите компанию',
+    desc: 'Найдите контрагента по названию или ИНН, либо загрузите свои документы.',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-          d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     ),
   },
@@ -60,29 +54,69 @@ const ADVANTAGES = [
   { label: 'Источники', value: 'AI + реестры', sub: 'ЕГРЮЛ, ФНС, арбитраж, СМИ' },
 ];
 
+const REGISTRY_SOURCES = [
+  { label: 'ЕГРЮЛ / ФНС', icon: '🏛️' },
+  { label: 'Арбитраж', icon: '⚖️' },
+  { label: 'СМИ и пресса', icon: '📰' },
+  { label: 'Публ. отчётность', icon: '📊' },
+];
+
+function buildRegistryPrompt(company: CompanySuggestion): string {
+  return `ОБЪЕКТ АНАЛИЗА — РЕАЛЬНАЯ РОССИЙСКАЯ КОМПАНИЯ:
+Полное наименование: ${company.fullName}
+ИНН: ${company.inn}
+ОГРН: ${company.ogrn}
+Юридический адрес: ${company.address}
+Регион: ${company.region}
+Статус: ${company.status === 'ACTIVE' ? 'Действующая' : company.status}
+
+ИСТОЧНИКИ ДЛЯ АНАЛИЗА:
+Проведи due diligence используя все публично известные факты об этой компании:
+• ЕГРЮЛ — руководители, учредители, виды деятельности, история изменений
+• Арбитражные дела (kad.arbitr.ru) — суммы, стороны, результаты
+• ФНС — задолженности, блокировки счетов, процедуры банкротства
+• Публичная финансовая отчётность (для ПАО — раскрытие на Мосбирже)
+• Публикации в СМИ — репутационные риски, скандалы, санкции
+• ФССП — исполнительные производства
+• Сведения о бенефициарных владельцах и аффилированных структурах
+
+ВАЖНО: Все флаги и выводы основывай исключительно на реальных публичных данных об этой компании. Не используй синтетические данные. Если информация по какому-либо направлению ограничена — укажи это явно в summary и отрази в риск-балле (непрозрачность = повышенный риск).`;
+}
+
 export default function UploadScreen({ onStart }: Props) {
-  const [mode, setMode] = useState<'demo' | 'custom'>('demo');
+  const [mode, setMode] = useState<Mode>('registry');
   const [customText, setCustomText] = useState('');
   const [useCached, setUseCached] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<CompanySuggestion | null>(null);
 
   const handleCompanySelect = (company: CompanySuggestion) => {
     setSelectedCompany(company);
-    // Auto-fill custom text with company info for analysis
-    const info = `Компания: ${company.fullName}\nИНН: ${company.inn}\nОГРН: ${company.ogrn}\nАдрес: ${company.address}\nСтатус: ${company.status}`;
-    setCustomText(info);
-    setMode('custom');
+    setMode('registry');
+  };
+
+  const canStart = useCached || (
+    mode === 'upload' ? customText.trim().length > 0 : selectedCompany !== null
+  );
+
+  const handleStart = () => {
+    if (useCached) {
+      onStart(true);
+    } else if (mode === 'upload') {
+      onStart(false, customText);
+    } else if (selectedCompany) {
+      onStart(false, buildRegistryPrompt(selectedCompany));
+    }
   };
 
   return (
     <div className="space-y-16">
-      {/* ── Hero section with upload card ── */}
+      {/* ── Hero section ── */}
       <div className="relative overflow-hidden rounded-3xl">
         <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-zinc-900" />
         <GradientWaves className="opacity-60" />
 
         <div className="relative z-10 max-w-2xl mx-auto px-6 py-12 space-y-8">
-          {/* Hero headline */}
+          {/* Headline */}
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full text-[11px] text-blue-400 uppercase tracking-widest font-medium">
               <span className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
@@ -95,7 +129,7 @@ export default function UploadScreen({ onStart }: Props) {
               </span>
             </h2>
             <p className="text-zinc-400 text-sm max-w-md mx-auto">
-              ИИ анализирует документы и выявляет риски — юридические, финансовые, репутационные и структуру собственности.
+              ИИ анализирует данные и выявляет риски — юридические, финансовые, репутационные и структуру собственности.
             </p>
           </div>
 
@@ -118,56 +152,100 @@ export default function UploadScreen({ onStart }: Props) {
             )}
           </div>
 
-          {/* Upload card */}
-          <div className="glow-card bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6">
-            <div className="flex gap-1 mb-5 bg-zinc-800/50 rounded-xl p-1">
+          {/* Mode selector */}
+          <div className="space-y-3">
+            <label className="text-xs text-zinc-500 uppercase tracking-wider font-medium">Источник данных</label>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Registry card */}
               <button
-                onClick={() => setMode('demo')}
-                className={`flex-1 px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-                  mode === 'demo'
-                    ? 'tab-active text-white font-medium shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-300'
+                onClick={() => setMode('registry')}
+                className={`p-4 rounded-2xl border text-left transition-all duration-200 ${
+                  mode === 'registry'
+                    ? 'border-violet-500/40 bg-violet-500/5 shadow-[0_0_20px_rgba(139,92,246,0.08)]'
+                    : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900/80'
                 }`}
               >
-                Демо-пакет
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 transition-colors ${
+                  mode === 'registry' ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-zinc-800'
+                }`}>
+                  <svg className={`w-4.5 h-4.5 ${mode === 'registry' ? 'text-violet-400' : 'text-zinc-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <div className="text-sm font-semibold text-white mb-1">Открытые реестры</div>
+                <div className="text-xs text-zinc-500 leading-relaxed">ЕГРЮЛ, арбитраж, ФНС, СМИ — анализ по публичным данным</div>
               </button>
+
+              {/* Upload card */}
               <button
-                onClick={() => setMode('custom')}
-                className={`flex-1 px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
-                  mode === 'custom'
-                    ? 'tab-active text-white font-medium shadow-sm'
-                    : 'text-zinc-400 hover:text-zinc-300'
+                onClick={() => setMode('upload')}
+                className={`p-4 rounded-2xl border text-left transition-all duration-200 ${
+                  mode === 'upload'
+                    ? 'border-blue-500/40 bg-blue-500/5 shadow-[0_0_20px_rgba(96,165,250,0.08)]'
+                    : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900/80'
                 }`}
               >
-                Свой текст
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 transition-colors ${
+                  mode === 'upload' ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-zinc-800'
+                }`}>
+                  <svg className={`w-4.5 h-4.5 ${mode === 'upload' ? 'text-blue-400' : 'text-zinc-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="text-sm font-semibold text-white mb-1">Свои документы</div>
+                <div className="text-xs text-zinc-500 leading-relaxed">Устав, договоры, отчётность — вставьте текст документов</div>
               </button>
             </div>
+          </div>
 
-            {mode === 'demo' ? (
-              <div className="space-y-2 stagger-children">
-                <p className="text-sm text-zinc-400 mb-3">Пакет документов (5 файлов):</p>
-                {DEMO_FILES.map((file) => (
-                  <div
-                    key={file.name}
-                    className="flex items-center gap-3 px-4 py-2.5 bg-zinc-800/40 rounded-xl border border-zinc-800/50 hover:border-zinc-700/50 transition-colors group"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center group-hover:bg-zinc-700/80 transition-colors">
-                      <svg className="w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          {/* Mode content */}
+          <div className="glow-card bg-zinc-900/80 border border-zinc-800 rounded-2xl p-5 min-h-[120px]">
+            {mode === 'registry' ? (
+              selectedCompany ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
                     </div>
-                    <span className="text-sm text-zinc-300">{file.label}</span>
-                    <span className="text-xs text-zinc-600 ml-auto font-mono">{file.name}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-white truncate">{selectedCompany.name}</div>
+                      <div className="text-xs text-zinc-500 mt-0.5">ИНН {selectedCompany.inn} · ОГРН {selectedCompany.ogrn}</div>
+                      <div className="text-xs text-zinc-600 mt-0.5 truncate">{selectedCompany.address}</div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {REGISTRY_SOURCES.map((src) => (
+                      <div key={src.label} className="flex items-center gap-2 px-3 py-2 bg-zinc-800/50 rounded-lg">
+                        <span className="text-xs">{src.icon}</span>
+                        <span className="text-xs text-zinc-400">{src.label}</span>
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center py-4 gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-800/60 border border-zinc-700/50 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm text-zinc-400 font-medium">Выберите компанию выше</div>
+                    <div className="text-xs text-zinc-600 mt-0.5">Начните вводить название или ИНН</div>
+                  </div>
+                </div>
+              )
             ) : (
               <textarea
                 value={customText}
                 onChange={(e) => setCustomText(e.target.value)}
-                placeholder="Вставьте текст документов для анализа..."
-                className="w-full h-40 bg-zinc-800/50 border border-zinc-700/50 rounded-xl p-4 text-sm text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none focus:border-blue-500/30 focus:ring-1 focus:ring-blue-500/10 transition-all"
+                placeholder="Вставьте текст документов для анализа — устав, договоры, финансовую отчётность..."
+                className="w-full h-36 bg-transparent text-sm text-zinc-300 placeholder-zinc-600 resize-none focus:outline-none"
               />
             )}
           </div>
@@ -178,15 +256,15 @@ export default function UploadScreen({ onStart }: Props) {
                 type="checkbox"
                 checked={useCached}
                 onChange={(e) => setUseCached(e.target.checked)}
-                className="rounded border-zinc-600 bg-zinc-800 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 w-4 h-4 accent-blue-500"
+                className="rounded border-zinc-600 bg-zinc-800 w-4 h-4 accent-blue-500"
               />
               <span className="group-hover:text-zinc-300 transition-colors">Записанный прогон</span>
-              <span className="text-zinc-600 text-xs">(не требует API)</span>
+              <span className="text-zinc-600 text-xs">(без API)</span>
             </label>
 
             <button
-              onClick={() => onStart(useCached, mode === 'custom' ? customText : undefined)}
-              disabled={mode === 'custom' && !customText.trim()}
+              onClick={handleStart}
+              disabled={!canStart}
               className="btn-shimmer px-7 py-3 bg-gradient-to-r from-blue-500 to-violet-500 text-white font-medium rounded-xl hover:from-blue-400 hover:to-violet-400 transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/20 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               Запустить проверку →

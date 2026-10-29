@@ -98,9 +98,15 @@ export default function Home() {
               <span className="text-lg font-light text-zinc-400 tracking-tight">Verdict</span>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="red-line-accent w-12 hidden sm:block" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-600 font-medium">MVP Demo</span>
+          <div className="flex items-center gap-3">
+            <div className="red-line-accent w-10 hidden sm:block" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-zinc-800 bg-zinc-900/80">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-40" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[10px] font-medium text-zinc-400 tracking-widest uppercase">Beta</span>
+            </div>
           </div>
         </div>
       </header>
