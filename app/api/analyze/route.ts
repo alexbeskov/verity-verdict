@@ -97,6 +97,7 @@ export async function POST(request: Request) {
         }
 
         step('Читаю пакет документов...');
+        const startMs = Date.now();
 
         let documents: DocumentInput[];
         if (body.documents && Array.isArray(body.documents) && body.documents.length > 0) {
@@ -109,9 +110,12 @@ export async function POST(request: Request) {
 
         step('Анализирую сведения о компании и структуру собственности...');
 
-        const { content: rawContent } = await callWithFallback(
+        const firstCall = await callWithFallback(
           apiKey, SYSTEM_PROMPT, userPrompt, step
         );
+        let rawContent = firstCall.content;
+        let usedModel = firstCall.model;
+        let totalUsage = { ...firstCall.usage };
 
         step('Разбираю результат анализа...');
 
@@ -122,16 +126,26 @@ export async function POST(request: Request) {
           step('Формат ответа некорректен, запрашиваю исправление...');
           const retryPrompt = `Твой предыдущий ответ не является валидным JSON. Верни результат анализа СТРОГО в формате JSON без markdown-обёрток. Вот твой предыдущий ответ для исправления:\n\n${rawContent.slice(0, 2000)}`;
 
-          const { content: retryContent } = await callWithFallback(
+          const retryCall = await callWithFallback(
             apiKey, SYSTEM_PROMPT, retryPrompt, step
           );
-          parsed = parseAnalysisJSON(retryContent) as Record<string, unknown>;
+          rawContent = retryCall.content;
+          usedModel = retryCall.model;
+          totalUsage.prompt_tokens += retryCall.usage.prompt_tokens;
+          totalUsage.completion_tokens += retryCall.usage.completion_tokens;
+          parsed = parseAnalysisJSON(rawContent) as Record<string, unknown>;
         }
 
         step('Проверяю цитаты в источниках...');
 
         let result = validateResult(parsed);
         result.flags = verifyFlags(result.flags, documents);
+        result.meta = {
+          model: usedModel,
+          durationMs: Date.now() - startMs,
+          promptTokens: totalUsage.prompt_tokens,
+          completionTokens: totalUsage.completion_tokens,
+        };
 
         step('Формирую итоговый отчёт...');
         await new Promise(r => setTimeout(r, 300));

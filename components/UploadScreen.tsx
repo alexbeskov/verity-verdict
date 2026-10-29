@@ -22,16 +22,8 @@ export default function UploadScreen({ onStart }: Props) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="glow-card bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6">
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-xl font-semibold text-white">ООО «ТрансЛогик Групп»</h2>
-            <p className="text-zinc-400 text-sm mt-1">
-              Оптовая торговля промышленным оборудованием и логистика
-            </p>
-          </div>
-          <span className="px-3 py-1 bg-zinc-800/80 text-zinc-400 text-xs rounded-full border border-zinc-700/50 backdrop-blur-sm">
-            Демо-компания
-          </span>
+        <div className="mb-5">
+          <h2 className="text-xl font-semibold text-white">ООО «ТрансЛогик Групп»</h2>
         </div>
 
         <div className="flex gap-1 mb-5 bg-zinc-800/50 rounded-xl p-1">

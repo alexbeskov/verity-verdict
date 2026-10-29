@@ -6,13 +6,23 @@ const MODEL_CHAIN = [
   { id: 'deepseek/deepseek-v4.1-flash', name: 'DeepSeek V4.1 Flash' },
 ];
 
+interface PolzaUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+}
+
+interface PolzaResult {
+  content: string;
+  usage: PolzaUsage;
+}
+
 export async function callPolza(
   apiKey: string,
   model: string,
   systemPrompt: string,
   userPrompt: string,
   signal?: AbortSignal
-): Promise<string> {
+): Promise<PolzaResult> {
   const res = await fetch(`${POLZA_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -39,7 +49,17 @@ export async function callPolza(
   const data = await res.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content) throw new Error('Empty response from model');
-  return content;
+  const usage: PolzaUsage = {
+    prompt_tokens: data.usage?.prompt_tokens ?? 0,
+    completion_tokens: data.usage?.completion_tokens ?? 0,
+  };
+  return { content, usage };
+}
+
+interface FallbackResult {
+  content: string;
+  model: string;
+  usage: PolzaUsage;
 }
 
 export async function callWithFallback(
@@ -47,8 +67,9 @@ export async function callWithFallback(
   systemPrompt: string,
   userPrompt: string,
   onStep: (msg: string) => void
-): Promise<{ content: string; model: string }> {
+): Promise<FallbackResult> {
   const errors: string[] = [];
+  const totalUsage: PolzaUsage = { prompt_tokens: 0, completion_tokens: 0 };
 
   for (const model of MODEL_CHAIN) {
     try {
@@ -56,7 +77,7 @@ export async function callWithFallback(
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 120_000);
 
-      const content = await callPolza(
+      const result = await callPolza(
         apiKey,
         model.id,
         systemPrompt,
@@ -64,7 +85,9 @@ export async function callWithFallback(
         controller.signal
       );
       clearTimeout(timeout);
-      return { content, model: model.id };
+      totalUsage.prompt_tokens += result.usage.prompt_tokens;
+      totalUsage.completion_tokens += result.usage.completion_tokens;
+      return { content: result.content, model: model.id, usage: totalUsage };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`${model.id}: ${msg}`);

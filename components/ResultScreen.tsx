@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { AnalysisResult } from '@/lib/types';
 import ScoreDisplay from './ScoreDisplay';
+import CostCounter from './CostCounter';
 import FlagCard from './FlagCard';
 import ContradictionCard from './ContradictionCard';
 import QuestionsPanel from './QuestionsPanel';
@@ -38,6 +39,8 @@ export default function ResultScreen({ result, onReset }: Props) {
       </div>
 
       <ScoreDisplay result={result} />
+
+      {result.meta && <CostCounter meta={result.meta} />}
 
       <div className="flex gap-1 bg-zinc-900/80 border border-zinc-800/50 rounded-2xl p-1.5 backdrop-blur-sm">
         {TABS.map((t) => (

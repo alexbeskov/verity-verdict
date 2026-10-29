@@ -29,6 +29,13 @@ export interface Contradiction {
   sources: Array<{ doc: string; quote: string }>;
 }
 
+export interface AnalysisMeta {
+  model: string;
+  durationMs: number;
+  promptTokens: number;
+  completionTokens: number;
+}
+
 export interface AnalysisResult {
   score: number;
   subscores: {
@@ -42,6 +49,7 @@ export interface AnalysisResult {
   contradictions: Contradiction[];
   questions: string[];
   summary: string;
+  meta?: AnalysisMeta;
 }
 
 export interface SSEEvent {
